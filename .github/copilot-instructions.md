@@ -16,6 +16,12 @@ Build a VS Code extension that:
    * The root folder of an **ASP.NET (.NET) backend**
 
 2. Scans both projects to build an **API endpoint index**
+  * Frontend folders are /lib/api
+  * Frontend files are *.client.ts, *.client.tsx, *.ts, *.tsx
+  * Backend folders are /*/Controllers
+  * Backend files are *Controller.cs
+
+Scanning should only happen if changes are detected in relevant files.
 
 3. Enforces:
 
@@ -94,57 +100,94 @@ Rules:
 
 Copilot must generate code that:
 
-* Scans `.ts` and `.tsx` files only
+* Scans `.ts` and `.tsx` files only (excluding `node_modules`)
 * Detects endpoints in:
 
 ```ts
-fetch("/api/... ")
-axios.get("/api/... ")
-axios.post("/api/... ")
+fetch("/api/users")
+fetch('/api/users')
+fetch(`/api/users/${userId}`)
+fetch(`/api/users/${userId}/posts/${postId}`)
+fetch(`/api/Users${query}`, { method: "GET" })  // Query param - stripped
+axios.get("/api/users")
+axios.post("/api/users")
+axios.put(`/api/users/${id}`)
+axios.delete(`/api/users/${id}`)
 ```
 
+* Extracts ordered parameter names from template literals `${paramName}`
+* **Route vs Query Parameter Detection:**
+  * Route param: `${param}` preceded by `/` (e.g., `/api/users/${id}`)
+  * Query param: `${param}` NOT preceded by `/` (e.g., `/api/Users${query}`)
+  * Query strings after `?` are stripped from normalized path
 * Records:
-
   * File path
-  * Line number
-  * Endpoint string
+  * Line number (1-based)
+  * Endpoint string (normalized, query params stripped)
+  * Route parameters array (in order, excludes query params)
 
-AST-based parsing is preferred, regex is acceptable initially.
+Implementation: **AST-based parsing** with regex fallback
 
 ---
 
 ## 🧱 Backend Scanning Rules
 
-Copilot must assume classic ASP.NET Web API controllers:
+Copilot must scan `*Controller.cs` files and parse ASP.NET Web API attributes:
+
+**Supported patterns:**
 
 ```csharp
+// Pattern 1: Class route + method route
 [Route("api")]
 [HttpGet("hello")]
+// Result: /api/hello
 ```
 
-or:
-
 ```csharp
+// Pattern 2: Full route on class, bare HTTP verb
 [Route("api/hello")]
 [HttpGet]
+// Result: /api/hello
 ```
-
-or:
 
 ```csharp
+// Pattern 3: [controller] placeholder (case-insensitive)
 [ApiController]
-[Route("api/*")]
+[Route("api/[controller]")]
 public class HelloController : ControllerBase
 {
-    [HttpGet("Route")]
-    public IActionResult GetHello() { ... }
+    [HttpGet("greet")]
+    public IActionResult GetGreet() { ... }
 }
+// Result: /api/hello/greet
 ```
 
-Rules:
+```csharp
+// Pattern 4: [Controller] placeholder (uppercase)
+[ApiController]
+[Route("api/[Controller]")]
+public class UsersController : ControllerBase
+{
+    [HttpGet("{id}")]
+    public IActionResult GetUser(int id) { ... }
+}
+// Result: /api/users/{id}
+```
 
-* Exactly **one** backend definition per endpoint
-* Controller + method location must be recorded
+```csharp
+// Pattern 5: Route parameters with constraints
+[HttpGet("{id:int}")]
+// Extracts: {id} (constraint stripped)
+```
+
+**Extraction rules:**
+* Class-level `[Route("...")]` combined with method-level `[Http*(\"...\")]`
+* `[controller]` placeholder → controller name (lowercase, without "Controller" suffix)
+* `[action]` placeholder → method name (lowercase)
+* Route parameters: `{paramName}` or `{paramName:type}` → extract `paramName`
+* Records: file path, line number (1-based), HTTP method, parameters array (in order)
+
+Implementation: **Regex-based parsing**
 
 ---
 
@@ -172,14 +215,70 @@ This must be implemented using:
 Copilot must preserve this logical structure:
 
 ```ts
-EndpointIndex {
-  endpoint: string;
-  backend: Location;        // exactly one
-  frontends: Location[];    // zero or more
+interface EndpointEntry {
+  endpoint: string;           // Normalized endpoint path (e.g., /api/users/{id})
+  backend?: Location;         // Backend definition location (exactly one or undefined)
+  httpMethod: string;         // HTTP method (GET, POST, PUT, DELETE, PATCH) - required
+  backendParams: string[];    // Backend route parameters in order
+  frontends: Array<{
+    location: Location;
+    params: string[];         // Frontend parameters from ${...} in order
+    rawEndpoint: string;      // Original endpoint string
+    httpMethod: string;       // HTTP method from frontend call
+  }>;
+  status: 'valid' | 'invalid' | 'unresolved' | 'param-mismatch';
+  paramMismatches: ParamMismatch[];  // Details about parameter name mismatches
+  errorMessage?: string;      // Error message for invalid endpoints
+}
+
+interface ParamMismatch {
+  position: number;           // 1-based position in route
+  frontendParam: string;      // Parameter name from frontend (e.g., "userId")
+  backendParam: string;       // Parameter name from backend (e.g., "id")
 }
 ```
 
 All UI components must consume this index as a single source of truth.
+
+---
+
+## 🌐 HTTP Method Handling
+
+Endpoints are uniquely identified by **path + HTTP method** combination:
+
+* `/api/users/{id}` with `GET` is a **different** endpoint than `/api/users/{id}` with `DELETE`
+* The internal key format is: `normalized_path:METHOD` (e.g., `/api/users/*:GET`)
+
+**Frontend HTTP Method Detection:**
+* `axios.get()`, `axios.post()`, etc. → method extracted from function name
+* `fetch()` with options object → method extracted from `{ method: 'POST' }`
+* `fetch()` without method option → defaults to `GET`
+* `axios({ url, method })` config style → method extracted from config
+* If method cannot be determined → defaults to `GET`
+
+**TreeView Display:**
+* Endpoints are displayed with method badge: `/api/users/{id} [GET]`
+* Method badge appears after the path
+
+**Duplicate Definition Rules:**
+* Duplicate detection is per path + method combination
+* Same path with different methods = **distinct valid endpoints**
+* Same path with same method = **invalid (duplicate)**
+
+---
+
+## 🔀 Parameter Validation Rules
+
+Route parameters must be validated between frontend and backend:
+
+* **Parameter names must match in order** (position-by-position comparison)
+* Frontend `${userId}` must match backend `{userId}` at the same position
+* Mismatches are shown in TreeView tooltips, not as separate nodes
+* Example mismatch: "Position 1: frontend `${userId}` ≠ backend `{id}`"
+
+Normalization for matching:
+* Frontend: `/api/users/${userId}/posts/${postId}` → `/api/users/*/posts/*`
+* Backend: `/api/users/{userId}/posts/{postId}` → `/api/users/*/posts/*`
 
 ---
 

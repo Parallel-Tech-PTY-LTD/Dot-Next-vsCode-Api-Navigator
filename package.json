@@ -1,34 +1,71 @@
 {
   "name": "dotnext-api-navigation",
-  "displayName": "dotnext-api-navigation",
-  "description": "Navigate Between fetch and controller endpoints by CNTRL+C on endpoints in the Next.js frontend to easily view logic.",
+  "displayName": "Dot-Next API Navigator",
+  "description": "Navigate between Next.js frontend fetch() calls and ASP.NET backend controller endpoints with CTRL+Click navigation.",
   "version": "0.0.1",
   "engines": {
     "vscode": "^1.107.0"
   },
   "categories": [
-    "Other"
+    "Other",
+    "Programming Languages"
   ],
   "activationEvents": [
-    "onLanguage:typescript"
+    "onLanguage:typescript",
+    "onLanguage:typescriptreact",
+    "workspaceContains:**/*Controller.cs",
+    "workspaceContains:**/*.tsx"
   ],
   "main": "./dist/extension.js",
   "contributes": {
     "commands": [
       {
-        "command": "dotnext-api-navigation.helloWorld",
-        "title": "Hello World"
-      }
-    ],
-    "languages": [
+        "command": "apiNavigator.refresh",
+        "title": "Refresh API Endpoints",
+        "icon": "$(refresh)",
+        "category": "API Navigator"
+      },
       {
-        "id": "typescript",
-        "extensions": [
-          ".ts",
-          ".tsx"
-        ]
+        "command": "apiNavigator.openSettings",
+        "title": "Open Settings",
+        "icon": "$(gear)",
+        "category": "API Navigator"
       }
     ],
+    "configuration": {
+      "title": "API Navigator",
+      "properties": {
+        "apiNavigator.frontendRoot": {
+          "type": "string",
+          "default": "./frontend",
+          "description": "Path to the Next.js frontend root folder (relative to workspace)"
+        },
+        "apiNavigator.backendRoot": {
+          "type": "string",
+          "default": "./backend",
+          "description": "Path to the ASP.NET backend root folder (relative to workspace)"
+        },
+        "apiNavigator.autoRefresh": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically refresh endpoint index when files change"
+        }
+      }
+    },
+    "menus": {
+      "view/title": [
+        {
+          "command": "apiNavigator.refresh",
+          "when": "view == dot-next-apiNavigator.endpoints",
+          "group": "navigation"
+        },
+        {
+          "command": "apiNavigator.openSettings",
+          "when": "view == dot-next-apiNavigator.endpoints",
+          "group": "navigation"
+        }
+      ]
+    },
     "viewsContainers": {
       "activitybar": [
         {
@@ -58,6 +95,9 @@
     "pretest": "npm run compile-tests && npm run compile && npm run lint",
     "lint": "eslint src",
     "test": "vscode-test"
+  },
+  "dependencies": {
+    "@typescript-eslint/typescript-estree": "^8.18.0"
   },
   "devDependencies": {
     "@types/vscode": "^1.107.0",
