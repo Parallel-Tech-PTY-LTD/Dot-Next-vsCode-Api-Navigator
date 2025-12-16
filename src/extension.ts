@@ -5,6 +5,7 @@ import { EndpointDefinitionProvider } from "./providers/EndpointDefinitionProvid
 import { EndpointHoverProvider } from "./providers/EndpointHoverProvider";
 import { getEndpointIndex } from "./EndpointIndex";
 import { debounce } from "./utils/debounce";
+import { BACKEND_FILE_GLOBS } from "./scanner/config";
 
 export function activate(context: vscode.ExtensionContext) {
   console.log('API Navigator extension is now active');
@@ -137,18 +138,21 @@ function setupFileWatchers(
     refreshIndex(index, treeProvider);
   }, 300);
 
-  // Watch for controller file changes in /*/Controllers folders only
-  const controllerWatcher = vscode.workspace.createFileSystemWatcher(
-    new vscode.RelativePattern(
-      path.join(workspaceFolder.uri.fsPath, backendRoot),
-      '*/Controllers/*Controller.cs'
-    )
-  );
+  // Watch for controller file changes in backend root using configured globs
+  // Create one watcher per glob (API expects a single pattern, not an array)
+  BACKEND_FILE_GLOBS.forEach(glob => {
+    const watcher = vscode.workspace.createFileSystemWatcher(
+      new vscode.RelativePattern(
+        path.join(workspaceFolder.uri.fsPath, backendRoot),
+        glob
+      )
+    );
 
-  controllerWatcher.onDidChange(debouncedRefresh);
-  controllerWatcher.onDidCreate(debouncedRefresh);
-  controllerWatcher.onDidDelete(debouncedRefresh);
-  context.subscriptions.push(controllerWatcher);
+    watcher.onDidChange(debouncedRefresh);
+    watcher.onDidCreate(debouncedRefresh);
+    watcher.onDidDelete(debouncedRefresh);
+    context.subscriptions.push(watcher);
+  });
 
   // Watch for TypeScript/TSX file changes in /lib/api folder only
   const frontendWatcher = vscode.workspace.createFileSystemWatcher(
