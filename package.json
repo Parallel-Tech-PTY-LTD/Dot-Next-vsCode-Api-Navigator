@@ -66,21 +66,13 @@
         }
       ]
     },
-    "viewsContainers": {
-      "activitybar": [
-        {
-          "id": "dot-next-apiNavigator",
-          "title": "Dot-Next API Navigator",
-          "icon": "media/api.svg"
-        }
-      ]
-    },
     "views": {
-      "dot-next-apiNavigator": [
+      "explorer": [
         {
           "id": "dot-next-apiNavigator.endpoints",
-          "name": "Endpoints",
-          "icon": "media/api.svg"
+          "name": "API Endpoints",
+          "icon": "media/api.svg",
+          "contextualTitle": "Dot-Next API Navigator"
         }
       ]
     }

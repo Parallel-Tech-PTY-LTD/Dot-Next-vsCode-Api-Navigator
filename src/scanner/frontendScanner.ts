@@ -104,8 +104,8 @@ function extractEndpointFromNode(node: TSESTree.Node): ExtractedEndpoint | null 
 
     const callee = node.callee;
 
-    // Check for fetch() call - method comes from options object if present
-    if (callee.type === AST_NODE_TYPES.Identifier && callee.name === 'fetch') {
+    // Check for fetch() or apiFetch() call - method comes from options object if present
+    if (callee.type === AST_NODE_TYPES.Identifier && (callee.name === 'fetch' || callee.name === 'apiFetch')) {
         const result = extractFromArgument(node.arguments[0]);
         if (result) {
             // Check for method in fetch options (second argument)
@@ -387,7 +387,11 @@ async function parseFrontendFileRegex(fileUri: vscode.Uri): Promise<FrontendEndp
 
     // Patterns with method extraction - capture method name for axios
     const patterns: Array<{ regex: RegExp; group: number; methodGroup?: number; defaultMethod: string }> = [
+        // Standard fetch() call
         { regex: /fetch\s*\(\s*["'`](\/api\/[^"'`]+)["'`]/g, group: 1, defaultMethod: 'GET' },
+        // apiFetch<T>() or apiFetch() - custom fetch wrapper with optional generic type
+        { regex: /apiFetch(?:<[^>]*>)?\s*\(\s*["'`](\/api\/[^"'`]+)["'`]/g, group: 1, defaultMethod: 'GET' },
+        // axios.get/post/put/delete/patch() calls
         { regex: /axios\s*\.\s*(get|post|put|delete|patch)\s*\(\s*["'`](\/api\/[^"'`]+)["'`]/gi, group: 2, methodGroup: 1, defaultMethod: 'GET' }
     ];
 
@@ -503,7 +507,11 @@ function detectEndpointAtPositionRegex(
 
     // Patterns with method extraction
     const patterns: Array<{ regex: RegExp; group: number; methodGroup?: number; defaultMethod: string }> = [
+        // Standard fetch() call
         { regex: /fetch\s*\(\s*["'`](\/api\/[^"'`]+)["'`]/g, group: 1, defaultMethod: 'GET' },
+        // apiFetch<T>() or apiFetch() - custom fetch wrapper with optional generic type
+        { regex: /apiFetch(?:<[^>]*>)?\s*\(\s*["'`](\/api\/[^"'`]+)["'`]/g, group: 1, defaultMethod: 'GET' },
+        // axios.get/post/put/delete/patch() calls
         { regex: /axios\s*\.\s*(get|post|put|delete|patch)\s*\(\s*["'`](\/api\/[^"'`]+)["'`]/gi, group: 2, methodGroup: 1, defaultMethod: 'GET' }
     ];
 

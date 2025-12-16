@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import { BACKEND_FILE_GLOBS } from './config';
 
 export interface BackendEndpoint {
     endpoint: string;           // Normalized endpoint (constraints stripped)
@@ -38,28 +39,18 @@ async function scanContollerPattern(controllerPattern: vscode.RelativePattern): 
  * - [action] placeholder substitution
  */
 export async function scanBackendControllers(backendRoot: string): Promise<BackendEndpoint[]> {
-    const endpoints: BackendEndpoint[] = [];
-    
-    // Only scan /*/Controllers folders as per copilot-instructions.md
-    // Pattern: {backendRoot}/*/Controllers/*Controller.cs
-    const controllerPattern = new vscode.RelativePattern(backendRoot, '*/*Controller.cs');
-    const scannedEndpoints = await scanContollerPattern(controllerPattern);
+        const endpoints: BackendEndpoint[] = [];
 
-    const controllerPattern2 = new vscode.RelativePattern(backendRoot, '*/*/*Controller.cs');
-    const scannedEndpoints2 = await scanContollerPattern(controllerPattern2);
+        // Scan using the configured globs from config.ts. Create a RelativePattern
+        // for each glob and aggregate discovered endpoints.
+        for (const glob of BACKEND_FILE_GLOBS) {
+                console.log(`Using backend glob pattern: ${glob}`);
+                const controllerPattern = new vscode.RelativePattern(backendRoot, glob);
+                const scanned = await scanContollerPattern(controllerPattern);
+                endpoints.push(...scanned);
+        }
 
-    const controllerPattern3 = new vscode.RelativePattern(backendRoot, '*/*/*/*Controller.cs');
-    const scannedEndpoints3 = await scanContollerPattern(controllerPattern3);
-
-    const controllerPattern4 = new vscode.RelativePattern(backendRoot, '*/*/*/*/*Controller.cs');
-    const scannedEndpoints4 = await scanContollerPattern(controllerPattern4);
-    
-    endpoints.push(...scannedEndpoints);
-    endpoints.push(...scannedEndpoints2);
-    endpoints.push(...scannedEndpoints3);
-    endpoints.push(...scannedEndpoints4);
-
-    return endpoints;
+        return endpoints;
 }
 
 interface ControllerContext {
