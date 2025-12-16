@@ -1,3 +1,8 @@
+# How to run #
+
+Open in vsCode. Press F5.
+
+
 # dotnext-api-navigation README
 
 This is the README for your extension "dotnext-api-navigation". After writing up a brief description, we recommend including the following sections.
