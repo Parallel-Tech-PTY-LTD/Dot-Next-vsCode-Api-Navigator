@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { BACKEND_FILE_GLOBS } from './config';
+import { BACKEND_FILE_GLOBS_DOTNET } from './config';
 
 export interface BackendEndpoint {
     endpoint: string;           // Normalized endpoint (constraints stripped)
@@ -43,7 +43,7 @@ export async function scanBackendControllers(backendRoot: string): Promise<Backe
 
         // Scan using the configured globs from config.ts. Create a RelativePattern
         // for each glob and aggregate discovered endpoints.
-        for (const glob of BACKEND_FILE_GLOBS) {
+        for (const glob of BACKEND_FILE_GLOBS_DOTNET) {
                 console.log(`Using backend glob pattern: ${glob}`);
                 const controllerPattern = new vscode.RelativePattern(backendRoot, glob);
                 const scanned = await scanContollerPattern(controllerPattern);

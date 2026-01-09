@@ -1,6 +1,6 @@
 {
-  "name": "dotnext-api-navigation",
-  "displayName": "Dot-Next API Navigator",
+  "name": "wired",
+  "displayName": "Frontend to backend API Navigator",
   "description": "Navigate between Next.js frontend fetch() calls and ASP.NET backend controller endpoints with CTRL+Click navigation.",
   "version": "0.0.1",
   "engines": {
@@ -14,7 +14,8 @@
     "onLanguage:typescript",
     "onLanguage:typescriptreact",
     "workspaceContains:**/*Controller.cs",
-    "workspaceContains:**/*.tsx"
+    "workspaceContains:**/*.tsx",
+    "workspaceContains:**/*.py"
   ],
   "main": "./dist/extension.js",
   "contributes": {
@@ -43,7 +44,17 @@
         "apiNavigator.backendRoot": {
           "type": "string",
           "default": "./backend",
-          "description": "Path to the ASP.NET backend root folder (relative to workspace)"
+          "description": "Path to the backend root folder (relative to workspace)"
+        },
+        "apiNavigator.backendKind": {
+          "type": "string",
+          "enum": ["dotnet", "fastapi"],
+          "description": "Backend framework type. Select 'dotnet' for ASP.NET Controllers or 'fastapi' for Python FastAPI."
+        },
+        "apiNavigator.fastapiEntrypoint": {
+          "type": "string",
+          "default": "",
+          "description": "FastAPI entrypoint in format 'path/to/file.py:app' (e.g., 'app/main.py:app'). Required when backendKind is 'fastapi'."
         },
         "apiNavigator.autoRefresh": {
           "type": "boolean",

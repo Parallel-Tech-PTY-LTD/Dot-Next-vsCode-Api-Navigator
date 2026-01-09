@@ -1,6 +1,8 @@
 import * as vscode from 'vscode';
 import { BackendEndpoint, scanBackendControllers } from './scanner/backendScanner';
+import { scanFastApiEndpoints } from './scanner/backendScannerFastApi';
 import { FrontendEndpoint, scanFrontendFiles } from './scanner/frontendScanner';
+import { BackendKind } from './scanner/config';
 
 export type EndpointStatus = 'valid' | 'invalid' | 'unresolved' | 'param-mismatch';
 
@@ -53,12 +55,32 @@ export class EndpointIndex {
 
     /**
      * Rebuilds the entire endpoint index by scanning frontend and backend files.
+     * @param frontendRoot Absolute path to the frontend root folder
+     * @param backendRoot Absolute path to the backend root folder
+     * @param backendKind Backend framework type ('dotnet' or 'fastapi')
+     * @param fastapiEntrypoint FastAPI entrypoint string (required when backendKind is 'fastapi')
      */
-    async rebuild(frontendRoot: string, backendRoot: string): Promise<void> {
+    async rebuild(
+        frontendRoot: string, 
+        backendRoot: string, 
+        backendKind: BackendKind,
+        fastapiEntrypoint?: string
+    ): Promise<void> {
         this.endpoints.clear();
 
-        // Scan backend controllers
-        const backendEndpoints = await scanBackendControllers(backendRoot);
+        // Scan backend based on backend kind
+        let backendEndpoints: BackendEndpoint[];
+        if (backendKind === 'fastapi') {
+            if (!fastapiEntrypoint) {
+                console.error('FastAPI entrypoint required but not provided');
+                backendEndpoints = [];
+            } else {
+                backendEndpoints = await scanFastApiEndpoints(backendRoot, fastapiEntrypoint);
+            }
+        } else {
+            // Default to ASP.NET controller scanning
+            backendEndpoints = await scanBackendControllers(backendRoot);
+        }
         
         // Scan frontend files
         const frontendEndpoints = await scanFrontendFiles(frontendRoot);

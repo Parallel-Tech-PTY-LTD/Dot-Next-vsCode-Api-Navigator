@@ -5,7 +5,7 @@ import { EndpointDefinitionProvider } from "./providers/EndpointDefinitionProvid
 import { EndpointHoverProvider } from "./providers/EndpointHoverProvider";
 import { getEndpointIndex } from "./EndpointIndex";
 import { debounce } from "./utils/debounce";
-import { BACKEND_FILE_GLOBS } from "./scanner/config";
+import { BACKEND_FILE_GLOBS_DOTNET, BACKEND_FILE_GLOBS_FASTAPI, BackendKind, validateBackendConfig } from "./scanner/config";
 
 export function activate(context: vscode.ExtensionContext) {
   console.log('API Navigator extension is now active');
@@ -89,6 +89,16 @@ async function refreshIndex(
   const config = vscode.workspace.getConfiguration('apiNavigator');
   const frontendRoot = config.get<string>('frontendRoot', './frontend');
   const backendRoot = config.get<string>('backendRoot', './backend');
+  const backendKind = config.get<BackendKind>('backendKind');
+  const fastapiEntrypoint = config.get<string>('fastapiEntrypoint', '');
+
+  // Validate backend configuration
+  const validationError = validateBackendConfig(backendKind, fastapiEntrypoint);
+  if (validationError) {
+    vscode.window.showWarningMessage(`API Navigator: ${validationError}`);
+    treeProvider.refresh();
+    return;
+  }
 
   const absoluteFrontendRoot = path.join(workspaceFolder.uri.fsPath, frontendRoot);
   const absoluteBackendRoot = path.join(workspaceFolder.uri.fsPath, backendRoot);
@@ -101,7 +111,7 @@ async function refreshIndex(
         cancellable: false
       },
       async () => {
-        await index.rebuild(absoluteFrontendRoot, absoluteBackendRoot);
+        await index.rebuild(absoluteFrontendRoot, absoluteBackendRoot, backendKind!, fastapiEntrypoint);
         treeProvider.refresh();
       }
     );
@@ -110,8 +120,9 @@ async function refreshIndex(
     const valid = endpoints.filter(e => e.status === 'valid').length;
     const issues = endpoints.filter(e => e.status !== 'valid').length;
     
+    const kindLabel = backendKind === 'fastapi' ? 'FastAPI' : 'ASP.NET';
     vscode.window.setStatusBarMessage(
-      `API Navigator: ${endpoints.length} endpoints (${valid} valid, ${issues} with issues)`,
+      `API Navigator (${kindLabel}): ${endpoints.length} endpoints (${valid} valid, ${issues} with issues)`,
       5000
     );
   } catch (error) {
@@ -132,15 +143,19 @@ function setupFileWatchers(
   const config = vscode.workspace.getConfiguration('apiNavigator');
   const frontendRoot = config.get<string>('frontendRoot', './frontend');
   const backendRoot = config.get<string>('backendRoot', './backend');
+  const backendKind = config.get<BackendKind>('backendKind');
 
   // Debounced refresh function
   const debouncedRefresh = debounce(() => {
     refreshIndex(index, treeProvider);
   }, 300);
 
-  // Watch for controller file changes in backend root using configured globs
-  // Create one watcher per glob (API expects a single pattern, not an array)
-  BACKEND_FILE_GLOBS.forEach(glob => {
+  // Watch for backend file changes based on backend kind
+  const backendGlobs = backendKind === 'fastapi' 
+    ? BACKEND_FILE_GLOBS_FASTAPI 
+    : BACKEND_FILE_GLOBS_DOTNET;
+
+  backendGlobs.forEach(glob => {
     const watcher = vscode.workspace.createFileSystemWatcher(
       new vscode.RelativePattern(
         path.join(workspaceFolder.uri.fsPath, backendRoot),
