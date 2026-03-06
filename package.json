@@ -3,6 +3,9 @@
   "displayName": "Frontend to backend API Navigator",
   "description": "Navigate between Next.js frontend fetch() calls and ASP.NET backend controller endpoints with CTRL+Click navigation.",
   "version": "0.0.1",
+  "repository": {
+    "url": "https://github.com/Parallel-Tech-PTY-LTD/Dot-Next-vsCode-Api-Navigator.git"
+  },
   "engines": {
     "vscode": "^1.107.0"
   },

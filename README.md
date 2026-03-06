@@ -1,76 +1,40 @@
-# How to run #
+# Frontend to Backend API Navigator
 
-Open in vsCode. Press F5.
-
-
-# dotnext-api-navigation README
-
-This is the README for your extension "dotnext-api-navigation". After writing up a brief description, we recommend including the following sections.
+Navigate between Next.js frontend `fetch()` calls and backend controller endpoints with **Ctrl+Click** navigation.
 
 ## Features
 
-Describe specific features of your extension including screenshots of your extension in action. Image paths are relative to this README file.
-
-For example if there is an image subfolder under your extension project workspace:
-
-\!\[feature X\]\(images/feature-x.png\)
-
-> Tip: Many popular extensions utilize animations. This is an excellent way to show off your extension! We recommend short, focused animations that are easy to follow.
-
-## Requirements
-
-If you have any requirements or dependencies, add a section describing those and how to install and configure them.
+- **Go-to-Definition** — Ctrl+Click on a frontend API URL string to jump directly to the matching backend endpoint.
+- **Hover Info** — Hover over an API URL in your frontend code to see the resolved backend endpoint details.
+- **Endpoint Tree View** — Browse all discovered API endpoints in the Explorer sidebar panel.
+- **Auto Refresh** — Automatically re-scans endpoints when files change.
+- **Multi-backend support** — Works with ASP.NET Controllers (C#) and Python FastAPI.
 
 ## Extension Settings
 
-Include if your extension adds any VS Code settings through the `contributes.configuration` extension point.
+| Setting | Default | Description |
+|---|---|---|
+| `apiNavigator.frontendRoot` | `./frontend` | Path to the Next.js frontend root folder (relative to workspace) |
+| `apiNavigator.backendRoot` | `./backend` | Path to the backend root folder (relative to workspace) |
+| `apiNavigator.backendKind` | — | Backend framework: `dotnet` or `fastapi` |
+| `apiNavigator.fastapiEntrypoint` | `""` | FastAPI entrypoint, e.g. `app/main.py:app` (required for `fastapi`) |
+| `apiNavigator.autoRefresh` | `true` | Automatically refresh endpoint index when files change |
 
-For example:
+## Getting Started
 
-This extension contributes the following settings:
+1. Open a workspace containing both frontend and backend projects.
+2. Set `apiNavigator.frontendRoot` and `apiNavigator.backendRoot` to point at your project folders.
+3. Select your `apiNavigator.backendKind` (`dotnet` or `fastapi`).
+4. Use **Ctrl+Click** on any API URL string in your frontend code to navigate to the backend handler.
 
-* `myExtension.enable`: Enable/disable this extension.
-* `myExtension.thing`: Set to `blah` to do something.
+## Installing from Source
 
-## Known Issues
+```bash
+npm install -g @vscode/vsce
+vsce package
+code --install-extension wired-0.0.1.vsix
+```
 
-Calling out known issues can help limit users opening duplicate issues against your extension.
+## Development
 
-## Release Notes
-
-Users appreciate release notes as you update your extension.
-
-### 1.0.0
-
-Initial release of ...
-
-### 1.0.1
-
-Fixed issue #.
-
-### 1.1.0
-
-Added features X, Y, and Z.
-
----
-
-## Following extension guidelines
-
-Ensure that you've read through the extensions guidelines and follow the best practices for creating your extension.
-
-* [Extension Guidelines](https://code.visualstudio.com/api/references/extension-guidelines)
-
-## Working with Markdown
-
-You can author your README using Visual Studio Code. Here are some useful editor keyboard shortcuts:
-
-* Split the editor (`Cmd+\` on macOS or `Ctrl+\` on Windows and Linux).
-* Toggle preview (`Shift+Cmd+V` on macOS or `Shift+Ctrl+V` on Windows and Linux).
-* Press `Ctrl+Space` (Windows, Linux, macOS) to see a list of Markdown snippets.
-
-## For more information
-
-* [Visual Studio Code's Markdown Support](http://code.visualstudio.com/docs/languages/markdown)
-* [Markdown Syntax Reference](https://help.github.com/articles/markdown-basics/)
-
-**Enjoy!**
+Open the project in VS Code and press **F5** to launch the Extension Development Host.
