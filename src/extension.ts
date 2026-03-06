@@ -76,6 +76,14 @@ export function activate(context: vscode.ExtensionContext) {
   refreshIndex(index, treeProvider);
 }
 
+interface Folder {
+
+}
+
+interface File {
+  
+}
+
 async function refreshIndex(
   index: ReturnType<typeof getEndpointIndex>,
   treeProvider: EndpointTreeProvider
