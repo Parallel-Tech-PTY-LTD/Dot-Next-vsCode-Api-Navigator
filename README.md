@@ -4,11 +4,11 @@ Navigate between Next.js frontend `fetch()` calls and backend controller endpoin
 
 ## Features
 
-- **Go-to-Definition** — Ctrl+Click on a frontend API URL string to jump directly to the matching backend endpoint.
-- **Hover Info** — Hover over an API URL in your frontend code to see the resolved backend endpoint details.
-- **Endpoint Tree View** — Browse all discovered API endpoints in the Explorer sidebar panel.
-- **Auto Refresh** — Automatically re-scans endpoints when files change.
-- **Multi-backend support** — Works with ASP.NET Controllers (C#) and Python FastAPI.
+- **Go-to-Definition** ï¿½ Ctrl+Click on a frontend API URL string to jump directly to the matching backend endpoint.
+- **Hover Info** ï¿½ Hover over an API URL in your frontend code to see the resolved backend endpoint details.
+- **Endpoint Tree View** ï¿½ Browse all discovered API endpoints in the Explorer sidebar panel.
+- **Auto Refresh** ï¿½ Automatically re-scans endpoints when files change.
+- **Multi-backend support** ï¿½ Works with ASP.NET Controllers (C#) and Python FastAPI.
 
 ## Extension Settings
 
@@ -16,7 +16,7 @@ Navigate between Next.js frontend `fetch()` calls and backend controller endpoin
 |---|---|---|
 | `apiNavigator.frontendRoot` | `./frontend` | Path to the Next.js frontend root folder (relative to workspace) |
 | `apiNavigator.backendRoot` | `./backend` | Path to the backend root folder (relative to workspace) |
-| `apiNavigator.backendKind` | — | Backend framework: `dotnet` or `fastapi` |
+| `apiNavigator.backendKind` | ï¿½ | Backend framework: `dotnet` or `fastapi` |
 | `apiNavigator.fastapiEntrypoint` | `""` | FastAPI entrypoint, e.g. `app/main.py:app` (required for `fastapi`) |
 | `apiNavigator.autoRefresh` | `true` | Automatically refresh endpoint index when files change |
 
@@ -30,10 +30,12 @@ Navigate between Next.js frontend `fetch()` calls and backend controller endpoin
 ## Installing from Source
 
 ```bash
-npm install -g @vscode/vsce
-vsce package
+npm install
+npx @vscode/vsce package
 code --install-extension wired-0.0.1.vsix
 ```
+
+Use `npx @vscode/vsce package` so packaging resolves the local build and validation dependencies from this workspace.
 
 ## Development
 
